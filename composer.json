@@ -1,0 +1,15 @@
+{
+    "name": "intaro/pap-client",
+    "description": "Post affilate pro client module",
+    "require": {
+        "php": ">=5.4",
+        "symfony/console": "dev-master",
+        "monolog/monolog": "dev-master",
+        "intarocrm/rest-api-client": "1.2.*"
+    },
+    "autoload": {
+        "psr-0": {
+            "Pap": "src/"
+        }
+    }
+}
