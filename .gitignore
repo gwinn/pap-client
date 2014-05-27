@@ -1,10 +1,11 @@
 /composer.phar
 /config/parameters.ini
 /vendor/
-/log
+/log/*
+!/log/.gitkeep
 # Other
 .DS_Store
 Thumb.db
-/nbproject/*	
+/nbproject/*
 *.php~
 .idea
