@@ -117,29 +117,6 @@ class ApiHelper {
     }
 
     public function orderHistory() {
-        //$this->sendErrorJson();
-
-//        try {
-//            $statuses = $this->intaroApi->orderStatusGroupsList();
-//        } catch (ApiException $e) {
-//            $this->log->addError('RestApi::orderStatusGroupsList:' . $e->getMessage());
-//
-//            $this->sendMail(
-//                'Error: IntaroCRM - PAP',
-//                '<p> RestApi::RestApi::orderStatusGroupsList:' . $e->getMessage() . '</p>'
-//            );
-//
-//            return false;
-//        } catch (CurlException $e) {
-//            $this->log->addError('RestApi::orderStatusGroupsList::Curl:' . $e->getMessage());
-//
-//            $this->sendMail(
-//                'Error: IntaroCRM - PAP',
-//                '<p> RestApi::orderStatusGroupsList::Curl:' . $e->getMessage() . '</p>'
-//            );
-//
-//            return false;
-//        }
 
         try {
             $orders = $this->intaroApi->orderHistory($this->getDate());
@@ -193,13 +170,10 @@ class ApiHelper {
                 return false;
             }
 
-            if(isset($o['customFields']) &&
-                isset($o['customFields']['transaction_id']) &&
-                $o['customFields']['transaction_id'] &&
-                isset($o['orderMethod']) &&
+            if(isset($o['customFields']) && isset($o['orderMethod']) &&
                 $o['orderMethod'] == $this->params['intarocrm_api']['orderMethod']
             ) {
-                $this->sendPAP($o['status'], $o['customFields']['transaction_id']);
+                $this->sendPAP($o);
             }
         }
 
@@ -218,11 +192,10 @@ class ApiHelper {
         } else return $result;
     }
 
-    public function sendPAP($status, $transaction) {
-
+    public function sendPAP($order) {
         include_once(__DIR__ . '/../../../../../pap/api/PapApi.class.php');
 
-        if(!$status || !$transaction) {
+        if(!$order['status'] || !$order['customFields']['pap_order_id'] || $order['customFields']['a_aid']) {
             return false;
         }
 
@@ -233,25 +206,55 @@ class ApiHelper {
             return false;
         }
 
-        $sale = new \Pap_Api_Transaction($session);
-        $sale->setTransId($transaction);
+        $request = new \Pap_Api_AffiliatesGrid($session);
+        $request->addFilter("refid", \Gpf_Data_Filter::LIKE, $order['customFields']['a_aid']);
+        $request->sendNow();
+        $grid = $request->getGrid();
+        $recordset = $grid->getRecordset();
 
-        if (!($sale->load())) {
-            $this->log->addError('PAP load transaction:' . json_encode($sale->getMessage()));
-            return false;
+        $affId = null;
+
+        foreach($recordset as $rec) {
+            $affId = $rec->get('userid');
         }
 
-        if ($status == 'new') {
-            $sale->setStatus('P');
-        } elseif ($status == 'sent') {
-            $sale->setStatus('A');
-        } else {
-            $sale->setStatus('D');
+        $request = new \Pap_Api_TransactionsGrid($session);
+        $request->addFilter('dateinserted', \Gpf_Data_Filter::DATERANGE_IS, \Gpf_Data_Filter::RANGE_THIS_YEAR);
+        $request->addFilter('userid', \Gpf_Data_Filter::EQUALS, $affId);
+        $request->setLimit(0, 30);
+        $request->sendNow();
+        $grid = $request->getGrid();
+        $recordset = $grid->getRecordset();
+
+        $transId = null;
+        foreach($recordset as $rec) {
+            if ($rec->get('orderid') && $rec->get('orderid') == $order['customFields']['pap_order_id']) {
+                $transId = $rec->get('id');
+            }
         }
 
-        if(!$sale->save()) {
-            $this->log->addError('Pap transaction update: ' . json_encode($sale->geetMessage()));
-            return false;
+        if ($transId != null) {
+            $sale = new \Pap_Api_Transaction($session);
+            $sale->setTransId($transId);
+
+            if (!($sale->load())) {
+                $this->log->addError('PAP load transaction:' . json_encode($sale->getMessage()));
+                return false;
+            }
+
+            $sale->setOrderId($order['customFields']['pap_order_id']);
+            if ($order['status'] == 'new') {
+                $sale->setStatus('P');
+            } elseif ($order['status'] == 'sent') {
+                $sale->setStatus('A');
+            } else {
+                $sale->setStatus('D');
+            }
+
+            if(!$sale->save()) {
+                $this->log->addError('Pap transaction update: ' . json_encode($sale->geetMessage()));
+                return false;
+            }
         }
 
         return true;
