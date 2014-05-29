@@ -193,7 +193,7 @@ class ApiHelper {
     }
 
     public function sendPAP($order) {
-        include_once(__DIR__ . '/../../../../../pap/api/PapApi.class.php');
+        include_once(__DIR__ . $this->params['pap']['pap_path']);
 
         if(!$order['status'] || !$order['customFields']['pap_order_id'] || $order['customFields']['a_aid']) {
             return false;
