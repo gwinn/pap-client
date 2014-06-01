@@ -63,19 +63,19 @@ class ApiHelper {
                 null, $order['customer']['fio'], 200, 0);
 
         } catch (ApiException $e) {
-            $this->log->addError('RestApi::customers:' . $e->getMessage());
-            $this->log->addError('RestApi::customers:' . json_encode($order));
+            $this->log->addError('['.$this->params['domain_name'].'] RestApi::customers:' . $e->getMessage());
+            $this->log->addError('['.$this->params['domain_name'].'] RestApi::customers:' . json_encode($order));
 
             $this->sendMail(
-                'Error: IntaroCRM - PAP',
+                '['.$this->params['domain_name'].'] Error: IntaroCRM - PAP',
                 '<p> RestApi::customers:' . $e->getMessage() . '</p>' .
                 '<p> RestApi::customers:' . json_encode($order) . '</p>'
             );
         } catch (CurlException $e) {
-            $this->log->addError('RestApi::customers::Curl:' . $e->getMessage());
+            $this->log->addError('['.$this->params['domain_name'].'] RestApi::customers::Curl:' . $e->getMessage());
 
             $this->sendMail(
-                'Error: IntaroCRM - PAP',
+                '['.$this->params['domain_name'].'] Error: IntaroCRM - PAP',
                 '<p> RestApi::customers::Curl:' . $e->getMessage() . '</p>' .
                 '<p> RestApi::customers::Curl:' . json_encode($order) . '</p>'
             );
@@ -96,19 +96,19 @@ class ApiHelper {
 
             $this->intaroApi->orderCreate($order);
         } catch (ApiException $e) {
-            $this->log->addError('RestApi::orderCreate:' . $e->getMessage());
-            $this->log->addError('RestApi::orderCreate:' . json_encode($order));
+            $this->log->addError('['.$this->params['domain_name'].'] RestApi::orderCreate:' . $e->getMessage());
+            $this->log->addError('['.$this->params['domain_name'].'] RestApi::orderCreate:' . json_encode($order));
 
             $this->sendMail(
-                'Error: IntaroCRM - PAP',
+                '['.$this->params['domain_name'].'] Error: IntaroCRM - PAP',
                 '<p> RestApi::orderCreate:' . $e->getMessage() . '</p>' .
                 '<p> RestApi::orderCreate:' . json_encode($order) . '</p>'
             );
         } catch (CurlException $e) {
-            $this->log->addError('RestApi::orderCreate::Curl:' . $e->getMessage());
+            $this->log->addError('['.$this->params['domain_name'].'] RestApi::orderCreate::Curl:' . $e->getMessage());
 
             $this->sendMail(
-                'Error: IntaroCRM - PAP',
+                '['.$this->params['domain_name'].'] Error: IntaroCRM - PAP',
                 '<p> RestApi::orderCreate::Curl:' . $e->getMessage() . '</p>' .
                 '<p> RestApi::orderCreate::Curl:' . json_encode($order) . '</p>'
             );
@@ -122,21 +122,21 @@ class ApiHelper {
             $orders = $this->intaroApi->orderHistory($this->getDate());
             $this->saveDate($this->intaroApi->getGeneratedAt()->format('Y-m-d H:i:s'));
         } catch (ApiException $e) {
-            $this->log->addError('RestApi::orderHistory:' . $e->getMessage());
-            $this->log->addError('RestApi::orderHistory:' . json_encode($orders));
+            $this->log->addError('['.$this->params['domain_name'].'] RestApi::orderHistory:' . $e->getMessage());
+            $this->log->addError('['.$this->params['domain_name'].'] RestApi::orderHistory:' . json_encode($orders));
 
             $this->sendMail(
-                'Error: IntaroCRM - PAP',
+                '['.$this->params['domain_name'].'] Error: IntaroCRM - PAP',
                 '<p> RestApi::orderHistory:' . $e->getMessage() . '</p>' .
                 '<p> RestApi::orderHistory:' . json_encode($orders) . '</p>'
             );
 
             return false;
         } catch (CurlException $e) {
-            $this->log->addError('RestApi::orderHistory::Curl:' . $e->getMessage());
+            $this->log->addError('['.$this->params['domain_name'].'] RestApi::orderHistory::Curl:' . $e->getMessage());
 
             $this->sendMail(
-                'Error: IntaroCRM - PAP',
+                '['.$this->params['domain_name'].'] Error: IntaroCRM - PAP',
                 '<p> RestApi::orderHistory::Curl:' . $e->getMessage() . '</p>' .
                 '<p> RestApi::orderHistory::Curl:' . json_encode($orders) . '</p>'
             );
@@ -145,36 +145,39 @@ class ApiHelper {
         }
 
         foreach($orders as $order) {
-            try {
-                $o = $this->intaroApi->orderGet($order['id'], 'id');
-            } catch (ApiException $e) {
-                $this->log->addError('RestApi::orderGet:' . $e->getMessage());
-                $this->log->addError('RestApi::orderGet:' . json_encode($order));
+            if (isset($order['deleted']) && !$order['deleted']) {
+                try {
+                    $o = $this->intaroApi->orderGet($order['id'], 'id');
+                } catch (ApiException $e) {
+                    $this->log->addError('['.$this->params['domain_name'].'] RestApi::orderGet:' . $e->getMessage());
+                    $this->log->addError('['.$this->params['domain_name'].'] RestApi::orderGet:' . json_encode($order));
 
-                $this->sendMail(
-                    'Error: IntaroCRM - PAP',
-                    '<p> RestApi::orderGet:' . $e->getMessage() . '</p>' .
-                    '<p> RestApi::orderGet:' . json_encode($order) . '</p>'
-                );
+                    $this->sendMail(
+                        '['.$this->params['domain_name'].'] Error: IntaroCRM - PAP',
+                        '<p> RestApi::orderGet:' . $e->getMessage() . '</p>' .
+                        '<p> RestApi::orderGet:' . json_encode($order) . '</p>'
+                    );
 
-                return false;
-            } catch (CurlException $e) {
-                $this->log->addError('RestApi::orderGet::Curl:' . $e->getMessage());
+                    return false;
+                } catch (CurlException $e) {
+                    $this->log->addError('['.$this->params['domain_name'].'] RestApi::orderGet::Curl:' . $e->getMessage());
 
-                $this->sendMail(
-                    'Error: IntaroCRM - PAP',
-                    '<p> RestApi::orderGet::Curl:' . $e->getMessage() . '</p>' .
-                    '<p> RestApi::orderGet::Curl:' . json_encode($order) . '</p>'
-                );
+                    $this->sendMail(
+                        '['.$this->params['domain_name'].'] Error: IntaroCRM - PAP',
+                        '<p> RestApi::orderGet::Curl:' . $e->getMessage() . '</p>' .
+                        '<p> RestApi::orderGet::Curl:' . json_encode($order) . '</p>'
+                    );
 
-                return false;
+                    return false;
+                }
+
+                if(isset($o['customFields']) && isset($o['orderMethod']) &&
+                    $o['orderMethod'] == $this->params['intarocrm_api']['orderMethod']
+                ) {
+                    $this->sendPAP($o);
+                }
             }
 
-            if(isset($o['customFields']) && isset($o['orderMethod']) &&
-                $o['orderMethod'] == $this->params['intarocrm_api']['orderMethod']
-            ) {
-                $this->sendPAP($o);
-            }
         }
 
         return true;
@@ -202,7 +205,7 @@ class ApiHelper {
         $session = new \Gpf_Api_Session($this->params['pap']['url']);
 
         if(!$session->login($this->params['pap']['login'],$this->params['pap']['password'])) {
-            $this->log->addError('PAP auth:' . json_encode($session->getMessage()));
+            $this->log->addError('['.$this->params['domain_name'].'] PAP auth:' . json_encode($session->getMessage()));
             return false;
         }
 
@@ -238,21 +241,25 @@ class ApiHelper {
             $sale->setTransId($transId);
 
             if (!($sale->load())) {
-                $this->log->addError('PAP load transaction:' . json_encode($sale->getMessage()));
+                $this->log->addError('['.$this->params['domain_name'].'] PAP load transaction:' . json_encode($sale->getMessage()));
                 return false;
             }
 
             $sale->setOrderId($order['customFields']['pap_order_id']);
+
             if ($order['status'] == 'new') {
                 $sale->setStatus('P');
-            } elseif ($order['status'] == 'sent') {
+            }
+
+            if ($order['status'] == 'sent') {
                 $sale->setStatus('A');
-            } else {
+            }
+            if ($order['status'] != 'sent' &&  $order['status'] != 'new') {
                 $sale->setStatus('D');
             }
 
             if(!$sale->save()) {
-                $this->log->addError('Pap transaction update: ' . json_encode($sale->geetMessage()));
+                $this->log->addError('['.$this->params['domain_name'].'] Pap transaction update: ' . json_encode($sale->geetMessage()));
                 return false;
             }
         }
