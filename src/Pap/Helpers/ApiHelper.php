@@ -177,6 +177,7 @@ class ApiHelper {
                 }
 
                 if(isset($o['orderMethod']) && $o['orderMethod'] == $this->params['intarocrm_api']['orderMethod']) {
+                    $this->log->addNotice('send order to PAP: ' . $o['id'] . ' - ' . $o['status']);
                     $this->sendPAP($o);
                 }
             }
@@ -199,7 +200,7 @@ class ApiHelper {
     }
 
     public function sendPAP($order) {
-        include_once(__DIR__ . '/../../../../../pap/api/PapApi.class.php');
+        include_once __DIR__ . $this->params['pap_path'];
 
         if(!$order['status']) {
             return false;
@@ -211,7 +212,6 @@ class ApiHelper {
             $this->log->addError('['.$this->params['domain_name'].'] PAP auth:' . json_encode($session->getMessage()));
             return false;
         }
-
 
         $request = new \Pap_Api_TransactionsGrid($session);
         $request->addFilter('orderid', \Gpf_Data_Filter::EQUALS, $order['id']);
@@ -238,19 +238,37 @@ class ApiHelper {
             }
 
             $sale->setOrderId($order['id']);
+            $pap_status = '';
 
-            if ($order['status'] == 'sent') {
-                $sale->setStatus('A');
-                $sale->setTotalCost($order['summ']);
+            if ($order['status'] == 'new') {
+                $pap_status = 'P';
+                $sale->setStatus('P');
             }
 
-            if ($order['status'] != 'sent' &&  $order['status'] != 'new') {
+            if ($order['status'] == 'sent' || $order['status'] == 'send') {
+                $pap_status = 'A';
+                $sale->setStatus('A');
+            }
+
+            if ($order['status'] != 'sent' &&  $order['status'] != 'new' &&  $order['status'] != 'send')) {
+                $pap_status = 'D';
                 $sale->setStatus('D');
             }
 
             if(!$sale->save()) {
                 $this->log->addError('['.$this->params['domain_name'].'] Pap transaction update: ' . json_encode($sale->getMessage()));
                 return false;
+            } else {
+                $this->log->addNotice(
+                    'Pap transaction update: ' . json_encode(
+                        array(
+                            'transId' => $transId,
+                            'order_id' => $order['id'],
+                            'order_status' => $order['status'],
+                            'pap_status' => $pap_status
+                        )
+                    )
+                );
             }
         }
 
