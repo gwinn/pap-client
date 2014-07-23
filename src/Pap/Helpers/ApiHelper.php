@@ -240,6 +240,10 @@ class ApiHelper {
             $sale->setOrderId($order['id']);
             $pap_status = '';
 
+            if ($sale->getStatus() && $sale->getStatus() == 'A') {
+                exit();
+            }
+
             if ($order['status'] == 'new') {
                 $pap_status = 'P';
                 $sale->setStatus('P');
