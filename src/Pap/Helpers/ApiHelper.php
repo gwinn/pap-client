@@ -191,12 +191,14 @@ class ApiHelper {
         file_put_contents($this->fileDate, $date, LOCK_EX);
     }
 
-    private function getDate() {
-        $result = file_get_contents($this->fileDate);
-        if(!$result) {
-            $result = new \DateTime();
-            return $result->format('Y-m-d H:i:s');
-        } else return $result;
+    public function getDate() {
+        if (file_exists($this->fileDate)) {
+            $result = file_get_contents($this->fileDate);
+        } else {
+            $result = date('Y-m-d H:i:s', strtotime('-2 days', strtotime(date('Y-m-d H:i:s'))));
+        }
+
+        return $result;
     }
 
     public function sendPAP($order) {
