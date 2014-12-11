@@ -62,7 +62,7 @@ class ApiHelper {
         try {
             $customers = $this->intaroApi->customers(
                 isset($order['phone']) ? $order['phone'] : null,
-                null, $order['customer']['fio'], 200, 0);
+                null, $order['customer']['fio'], 100, 0);
 
         } catch (ApiException $e) {
             $this->log->addError('['.$this->params['domain_name'].'] RestApi::customers:' . $e->getMessage());
